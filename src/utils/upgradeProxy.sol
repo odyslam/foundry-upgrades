@@ -25,8 +25,15 @@ contract UpgradeProxy is DeployProxy {
             ProxyAdminInterface(admin).upgrade(uupsProxy, newImplementation);
         }
         else {
-            vm.prank(admin);
-            uupsProxy.upgradeTo(newImplementation);
+            if (proxy == proxyType.UUPS) {
+                vm.prank(admin);
+                uupsProxy.upgradeTo(newImplementation);
+            } else if (proxy == proxyType.Beacon) {
+                vm.prank(admin);
+                upgradeableBeacon.upgradeTo(newImplementation);
+            } else if (proxy == proxyType.Transparent) {
+                refert("Transparent ERC1967 proxies do not have upgradeable implementations");
+            }
         }
     }
 
