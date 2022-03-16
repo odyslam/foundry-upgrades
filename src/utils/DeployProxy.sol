@@ -10,11 +10,8 @@ import {Vm} from "forge-std/Vm.sol";
 
 contract DeployProxy {
 
-    /// Proxy
-    ERC1967Proxy[] public erc1967Proxy;
-    UpgradeableBeacon[] public upgradeableBeacon;
-    BeaconProxy[] public beaconProxy;
-    TransparentUpgradeableProxy[] public uupsProxy;
+    /// Cheatcodes address
+    Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
     enum proxyType {
         UUPS,
@@ -22,65 +19,28 @@ contract DeployProxy {
         Transparent
     }
 
-    /// Cheatcodes address
-    Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
-
-    /// Return an array of addresses (address, address[]) --> (UpgradeableBeacon, BeaconProxies[])
-    function deployProxy(proxyType proxy, address implementation, bytes memory data) public returns (address){
-        if (proxy == proxyType.Transparent) {
-            return deployErc1967Proxy(implementation, data);
-        }
-        else if (proxy == proxyType.UUPS) {
-            revert("UUPS proxies require an admin address");
-        }
-        else if (proxy == proxyType.Beacon) {
-           revert("Beacon returns a tuple of addresses: (upgradeableBeacon, beaconProxy)");
-        }
+    function deployBeacon(address impl) public returns(UpgradeableBeacon){
+            UpgradeableBeacon ub = new UpgradeableBeacon(impl);
+            vm.label(address(ub), "Upgradeable Beacon");
+            return ub;
     }
 
-    function deployProxy(proxyType proxy, address implementation, bytes memory data) public returns (address[]){
-        if (proxy == proxyType.Transparent) {
-            revert("Transparent proxy returns a single address");
-        }
-        else if (proxy == proxyType.UUPS) {
-            revert("UUPS proxies require an admin address");
-        }
-        else if (proxy == proxyType.Beacon) {
-            return deployBeaconProxy(implementation, data);
-        }
-    }
-
-    function deployProxy(proxyType proxy, address implementation, address admin, bytes memory data) public
-    returns(address){
-        if (proxy == proxyType.Transparent) {
-            revert("proxy implementation does't include admin address");
-        }
-        else if (proxy == proxyType.UUPS) {
-            return deployUupsProxy(implementation, admin, data);
-        }
-        else if (proxy == proxyType.Beacon) {
-            revert("proxy implementation does't include admin address");
-        }
-    }
-
-    function deployBeaconProxy(address implementation, bytes memory data) public returns (address, address){
-        upgradeableBeacon = new UpgradeableBeacon(implementation);
-        beaconProxy = new BeaconProxy(address(upgradeableBeacon), data);
-        vm.label(address(upgradeableBeacon), "UpgradeableBeacon");
+    function deployBeaconProxy(UpgradeableBeacon ub,  bytes memory data) public returns (UpgradeableBeacon, BeaconProxy){
+        BeaconProxy beaconProxy = new BeaconProxy(address(ub), data);
         vm.label(address(beaconProxy), "Beacon Proxy");
-        return (address(upgradeableBeacon), address(beaconProxy));
+        return (upgradeableBeacon, beaconProxy);
     }
 
-    function deployErc1967Proxy(address implementation, bytes memory data) public returns(address){
-        erc1967Proxy = new ERC1967Proxy(implementation, data);
+    function deployErc1967Proxy(address implementation, bytes memory data) public returns(ERC1967Proxy){
+        ERC1967Proxy erc1967Proxy = new ERC1967Proxy(implementation, data);
         vm.label(address(erc1967Proxy), "ERC1967 Proxy");
-        return address(erc1967Proxy);
+        return erc1967Proxy;
     }
 
-    function deployUupsProxy(address implementation, address admin, bytes memory data) public returns(address){
-        uupsProxy = new TransparentUpgradeableProxy(implementation, admin, data);
+    function deployUupsProxy(address implementation, address admin, bytes memory data) public returns(TransparentUpgradeableProxy){
+        TransparentUpgradeableProxy uupsProxy = new TransparentUpgradeableProxy(implementation, admin, data);
         vm.label(address(uupsProxy), "UUPS Proxy");
-        return address(uupsProxy);
+        return uupsProxy;
 
     }
 }

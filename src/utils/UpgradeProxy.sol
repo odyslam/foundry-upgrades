@@ -32,9 +32,13 @@ contract UpgradeProxy is DeployProxy {
                 vm.prank(admin);
                 upgradeableBeacon.upgradeTo(newImplementation);
             } else if (proxy == proxyType.Transparent) {
-                refert("Transparent ERC1967 proxies do not have upgradeable implementations");
+                revert("Transparent ERC1967 proxies do not have upgradeable implementations");
             }
         }
+    }
+
+    function upgradeBeacon(address newBeacon, bytes memory data, bool forceCall) public {
+       upgradeableBeacon._upgradeBeaconToAndCall(newBeacon, data, forceCall);
     }
 
     /// @notice Upgrade a proxy smart contract and also pass calldata to be called with the update.
