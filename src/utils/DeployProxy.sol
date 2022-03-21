@@ -9,38 +9,95 @@ import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/Upgradeablebeacon.sol
 import {Vm} from "forge-std/Vm.sol";
 
 contract DeployProxy {
-
     /// Cheatcodes address
-    Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
+    Vm constant vm =
+        Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    enum proxyType {
+    ProxyType public proxyType;
+
+    address public proxyAddress;
+
+    address public beaconAddress;
+
+    ERC1967Proxy public erc1967;
+
+    TransparentUpgradeableProxy public uups;
+
+    UpgradeableBeacon public beacon;
+
+    BeaconProxy public beaconProxy;
+
+    enum ProxyType {
         UUPS,
+        BeaconProxy,
         Beacon,
         Transparent
     }
 
-    function deployBeacon(address impl) public returns(UpgradeableBeacon){
-            UpgradeableBeacon ub = new UpgradeableBeacon(impl);
-            vm.label(address(ub), "Upgradeable Beacon");
-            return ub;
+    function deploy(address implementation, bytes memory data)
+        public
+        returns (address)
+    {
+        if (proxyType == ProxyType.Transparent) {
+            revert("Transparent proxy returns a single address");
+        } else if (proxyType == ProxyType.UUPS) {
+            revert("UUPS proxies require an admin address");
+        } else if (proxyType == ProxyType.BeaconProxy) {
+            return deployBeaconProxy(implementation, data);
+        } else if (proxyType == ProxyType.Beacon) {
+            return deployBeacon(implementation);
+        }
     }
 
-    function deployBeaconProxy(UpgradeableBeacon ub,  bytes memory data) public returns (UpgradeableBeacon, BeaconProxy){
-        BeaconProxy beaconProxy = new BeaconProxy(address(ub), data);
-        vm.label(address(beaconProxy), "Beacon Proxy");
-        return (upgradeableBeacon, beaconProxy);
+    function deploy(
+        address implementation,
+        address admin,
+        bytes memory data
+    ) public returns (address) {
+        if (proxyType == ProxyType.Transparent) {
+            revert("proxy implementation does't include admin address");
+        } else if (proxyType == ProxyType.UUPS) {
+            return deployUupsProxy(implementation, admin, data);
+        } else if (proxyType == ProxyType.Beacon) {
+            revert("proxy implementation does't include admin address");
+        }
     }
 
-    function deployErc1967Proxy(address implementation, bytes memory data) public returns(ERC1967Proxy){
-        ERC1967Proxy erc1967Proxy = new ERC1967Proxy(implementation, data);
-        vm.label(address(erc1967Proxy), "ERC1967 Proxy");
-        return erc1967Proxy;
+    function deployBeacon(address impl) public returns (address) {
+        beacon = new UpgradeableBeacon(impl);
+        beaconAddress = address(beacon);
+        vm.label(address(beaconAddress), "Upgradeable Beacon");
+        return beaconAddress;
     }
 
-    function deployUupsProxy(address implementation, address admin, bytes memory data) public returns(TransparentUpgradeableProxy){
-        TransparentUpgradeableProxy uupsProxy = new TransparentUpgradeableProxy(implementation, admin, data);
-        vm.label(address(uupsProxy), "UUPS Proxy");
-        return uupsProxy;
+    function deployBeaconProxy(address _beacon, bytes memory data)
+        public
+        returns (address)
+    {
+        beaconProxy = new BeaconProxy(_beacon, data);
+        proxyAddress = address(beaconProxy);
+        vm.label(proxyAddress, "Beacon Proxy");
+        return proxyAddress;
+    }
 
+    function deployErc1967Proxy(address implementation, bytes memory data)
+        public
+        returns (address)
+    {
+        erc1967 = new ERC1967Proxy(implementation, data);
+        proxyAddress = address(erc1967);
+        vm.label(proxyAddress, "ERC1967 Proxy");
+        return proxyAddress;
+    }
+
+    function deployUupsProxy(
+        address implementation,
+        address admin,
+        bytes memory data
+    ) public returns (address) {
+        uups = new TransparentUpgradeableProxy(implementation, admin, data);
+        proxyAddress = address(uups);
+        vm.label(proxyAddress, "UUPS Proxy");
+        return proxyAddress;
     }
 }

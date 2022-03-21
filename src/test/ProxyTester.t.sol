@@ -3,21 +3,39 @@ pragma solidity >=0.8.0;
 
 import {Vm} from "forge-std/Vm.sol";
 import {DSTest} from "ds-test/test.sol";
-import {UpgradeProxy} from "../utils/UpgradeProxy.sol";
 import {console} from "forge-std/console.sol";
+import {ProxyTester} from "../ProxyTester.sol";
 
-contract UpgradeTest is DSTest, UpgradeProxy {
-    address impl = vm.addr(1);
-    UpgradeProxy proxyTester = new UpgradeProxy();
-    function setUp() public {}
+/*
+TODO:
+- Create a test to showcase the library
+- Go over the cheatcodes + OZ docs and think of tests you can add into the code
+- Add cheatcodes for added functionality (e.g storage slot) into the tester
+*/
+
+contract UpgradeTest is DSTest {
+    ProxyTester proxy;
+
+    address[] public implementations;
+
+    address proxyAddress;
+
+    Vm constant vm =
+        Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    function setUp() public {
+        proxy = new ProxyTester();
+        implementations = vm.addr(5);
+    }
+
     function testDeployUUPS() public {
-        proxy = proxyTester.deploy(UpgradeProxy.proxyType.UUPS, impl);
-        console.log("Address of proxy is %s", address(proxy.uupsProxy));
+        proxy.setType(ProxyTester.ProxyType.UUPS);
+        proxyAddress = proxy.deploy(implementations[0], "");
+        assertEq(proxyAddress, proxy.proxyAddress);
+        console.log("Address of proxy is %s", proxyAddress);
     }
 
     function testDeployBeacons(uint256 numberOfProxies) public {
         address beacon;
-        address[] beaconProxies = address[](4);
-        (beaconProxies, beacon) = proxyTester.deploy(UpgradeProxy.proxyType.Beacon, impl, 4);
     }
 }

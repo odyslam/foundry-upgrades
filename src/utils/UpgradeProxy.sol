@@ -4,13 +4,15 @@ pragma solidity >=0.8.0;
 import {DeployProxy} from "./deployProxy.sol";
 import {ProxyAdminInterface} from "./IProxyAdmin.sol";
 
-
 contract UpgradeProxy is DeployProxy {
-
     event Upgraded(address indexed implementation);
 
     /// @notice Upgrade a proxy smart contract without passing any calldata.
-    function upgradeProxy(proxyType proxy, address newImplementation, address admin, address owner) public {
+    function upgrade(
+        address newImplementation,
+        address admin,
+        address owner
+    ) public {
         // Load the expectEmit cheatcode for the Upgraded event. Since it's only a single argument, we only need
         // the first flag set to True.
         vm.expectEmit(true, false, false, false);
@@ -20,44 +22,60 @@ contract UpgradeProxy is DeployProxy {
         // contract.
         // Else, the upgrade function is called directly on the proxy, with the admin making the call.
         // vm.prank tells the Foundry VM to make the call from that particular address.
-        if (isContract(admin)){
+        if (isContract(admin)) {
             vm.prank(owner);
-            ProxyAdminInterface(admin).upgrade(uupsProxy, newImplementation);
-        }
-        else {
-            if (proxy == proxyType.UUPS) {
+            ProxyAdminInterface(admin).upgrade(uups, newImplementation);
+        } else {
+            if (proxyType == ProxyType.UUPS) {
                 vm.prank(admin);
-                uupsProxy.upgradeTo(newImplementation);
-            } else if (proxy == proxyType.Beacon) {
+                uups.upgradeTo(newImplementation);
+            } else if (proxyType == ProxyType.Beacon) {
                 vm.prank(admin);
-                upgradeableBeacon.upgradeTo(newImplementation);
-            } else if (proxy == proxyType.Transparent) {
-                revert("Transparent ERC1967 proxies do not have upgradeable implementations");
+                beacon.upgradeTo(newImplementation);
+            } else if (proxyType == ProxyType.Transparent) {
+                revert(
+                    "Transparent ERC1967 proxies do not have upgradeable implementations"
+                );
             }
         }
     }
 
-    function upgradeBeacon(address newBeacon, bytes memory data, bool forceCall) public {
-       upgradeableBeacon._upgradeBeaconToAndCall(newBeacon, data, forceCall);
-    }
-
     /// @notice Upgrade a proxy smart contract and also pass calldata to be called with the update.
-    function upgradeProxy(proxyType proxy, address newImplementation, bytes memory data, address admin, address owner) public {
+    function upgrade(
+        ProxyType proxy,
+        address newImplementation,
+        bytes memory data,
+        address admin,
+        address owner
+    ) public {
         vm.expectEmit(true, false, false, false);
         emit Upgraded(newImplementation);
-        if (isContract(admin)){
+        if (isContract(admin)) {
             vm.prank(owner);
-            ProxyAdminInterface(admin).upgradeAndCall(uupsProxy, newImplementation, data);
-        }
-        else {
+            ProxyAdminInterface(admin).upgradeAndCall(
+                uups,
+                newImplementation,
+                data
+            );
+        } else {
             vm.prank(admin);
-            uupsProxy.upgradeToAndCall(newImplementation, data);
+            uups.upgradeToAndCall(newImplementation, data);
         }
+    }
+
+    function upgradeBeacon(
+        address newBeacon,
+        bytes memory data,
+        bool forceCall
+    ) public {
+        beacon._upgradeBeaconToAndCall(newBeacon, data, forceCall);
     }
 
     function isContract(address addr) public view returns (bool) {
-      uint size;
-      assembly { size := extcodesize(addr) }
-      return size > 0;
+        uint256 size;
+        assembly {
+            size := extcodesize(addr)
+        }
+        return size > 0;
     }
 }
