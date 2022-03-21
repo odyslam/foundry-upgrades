@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 // Import OZ Proxy contracts
 import {ERC1967Proxy} from "openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 import {TransparentUpgradeableProxy} from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {BeaconProxy} from "openzeppelin/proxy/beacon/BeaconProxy.sol";
+import {UpgradeableBeaconProxy} from "./UpgradeableBeaconProxy.sol";
 import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/Upgradeablebeacon.sol";
 import {Vm} from "forge-std/Vm.sol";
 
@@ -25,7 +25,7 @@ contract DeployProxy {
 
     UpgradeableBeacon public beacon;
 
-    BeaconProxy public beaconProxy;
+    UpgradeableBeaconProxy public beaconProxy;
 
     enum ProxyType {
         UUPS,
@@ -49,6 +49,19 @@ contract DeployProxy {
         }
     }
 
+    function deploy(address implementation) public returns (address) {
+        if (proxyType == ProxyType.Transparent) {
+            revert("Transparent proxy returns a single address");
+        } else if (proxyType == ProxyType.UUPS) {
+            revert("UUPS proxies require an admin address");
+        } else if (proxyType == ProxyType.BeaconProxy) {
+            bytes memory data;
+            return deployBeaconProxy(implementation, data);
+        } else if (proxyType == ProxyType.Beacon) {
+            return deployBeacon(implementation);
+        }
+    }
+
     function deploy(
         address implementation,
         address admin,
@@ -57,6 +70,20 @@ contract DeployProxy {
         if (proxyType == ProxyType.Transparent) {
             revert("proxy implementation does't include admin address");
         } else if (proxyType == ProxyType.UUPS) {
+            return deployUupsProxy(implementation, admin, data);
+        } else if (proxyType == ProxyType.Beacon) {
+            revert("proxy implementation does't include admin address");
+        }
+    }
+
+    function deploy(address implementation, address admin)
+        public
+        returns (address)
+    {
+        if (proxyType == ProxyType.Transparent) {
+            revert("proxy implementation does't include admin address");
+        } else if (proxyType == ProxyType.UUPS) {
+            bytes memory data;
             return deployUupsProxy(implementation, admin, data);
         } else if (proxyType == ProxyType.Beacon) {
             revert("proxy implementation does't include admin address");
@@ -74,7 +101,7 @@ contract DeployProxy {
         public
         returns (address)
     {
-        beaconProxy = new BeaconProxy(_beacon, data);
+        beaconProxy = new UpgradeableBeaconProxy(_beacon, data);
         proxyAddress = address(beaconProxy);
         vm.label(proxyAddress, "Beacon Proxy");
         return proxyAddress;

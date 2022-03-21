@@ -8,8 +8,10 @@ contract ProxyTester is UpgradeProxy {
 
     constructor() {}
 
-    function setType(ProxyType _proxyType) public {
+    function setType(string memory _proxyType) public {
         require(typeSet == false, "ProxyTester has a proxy type already");
-        proxyType = _proxyType;
+        if (keccak256(bytes(_proxyType)) == keccak256(bytes("uups"))) {
+            proxyType = ProxyType.UUPS;
+        }
     }
 }

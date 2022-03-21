@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {DSTest} from "ds-test/test.sol";
 import {console} from "forge-std/console.sol";
 import {ProxyTester} from "../ProxyTester.sol";
+import {TestImplementation} from "./utils/TestImplementation.sol";
 
 /*
 TODO:
@@ -16,7 +17,7 @@ TODO:
 contract UpgradeTest is DSTest {
     ProxyTester proxy;
 
-    address[] public implementations;
+    TestImplementation impl;
 
     address proxyAddress;
 
@@ -25,17 +26,14 @@ contract UpgradeTest is DSTest {
 
     function setUp() public {
         proxy = new ProxyTester();
-        implementations = vm.addr(5);
+        impl = new TestImplementation();
     }
 
     function testDeployUUPS() public {
-        proxy.setType(ProxyTester.ProxyType.UUPS);
-        proxyAddress = proxy.deploy(implementations[0], "");
-        assertEq(proxyAddress, proxy.proxyAddress);
+        proxy.setType("uups");
+        address admin = vm.addr(69);
+        proxyAddress = proxy.deploy(address(impl), admin);
+        assertEq(proxyAddress, proxy.proxyAddress());
         console.log("Address of proxy is %s", proxyAddress);
-    }
-
-    function testDeployBeacons(uint256 numberOfProxies) public {
-        address beacon;
     }
 }

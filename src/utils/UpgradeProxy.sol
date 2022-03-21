@@ -5,6 +5,8 @@ import {DeployProxy} from "./deployProxy.sol";
 import {ProxyAdminInterface} from "./IProxyAdmin.sol";
 
 contract UpgradeProxy is DeployProxy {
+    /// @notice Emitted when a proxy is upgraded. We define it here so that we can use
+    /// the cheatcode and "expect" it.
     event Upgraded(address indexed implementation);
 
     /// @notice Upgrade a proxy smart contract without passing any calldata.
@@ -68,7 +70,7 @@ contract UpgradeProxy is DeployProxy {
         bytes memory data,
         bool forceCall
     ) public {
-        beacon._upgradeBeaconToAndCall(newBeacon, data, forceCall);
+        beaconProxy.upgradeBeaconToAndCall(newBeacon, data, forceCall);
     }
 
     function isContract(address addr) public view returns (bool) {
