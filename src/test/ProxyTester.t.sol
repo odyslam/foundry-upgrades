@@ -34,6 +34,18 @@ contract UpgradeTest is DSTest {
         address admin = vm.addr(69);
         proxyAddress = proxy.deploy(address(impl), admin);
         assertEq(proxyAddress, proxy.proxyAddress());
-        console.log("Address of proxy is %s", proxyAddress);
+        assertEq(proxyAddress, address(proxy.uups()));
+        bytes32 implSlot = bytes32(
+            uint256(keccak256("eip1967.proxy.implementation")) - 1
+        );
+        bytes32 proxySlot = vm.load(proxyAddress, implSlot);
+        address addr;
+        assembly {
+            mstore(0, proxySlot)
+            addr := mload(0)
+        }
+        emit log_bytes32(proxySlot);
+        emit log_address(addr);
+        assertEq(address(impl), addr);
     }
 }
