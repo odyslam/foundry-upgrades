@@ -21,17 +21,19 @@ contract UpgradeTest is DSTest {
 
     address proxyAddress;
 
+    address admin;
+
     Vm constant vm =
         Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function setUp() public {
         proxy = new ProxyTester();
         impl = new TestImplementation();
+        admin = vm.addr(69);
     }
 
     function testDeployUUPS() public {
         proxy.setType("uups");
-        address admin = vm.addr(69);
         proxyAddress = proxy.deploy(address(impl), admin);
         assertEq(proxyAddress, proxy.proxyAddress());
         assertEq(proxyAddress, address(proxy.uups()));
@@ -45,6 +47,23 @@ contract UpgradeTest is DSTest {
             addr := mload(0)
         }
         assertEq(address(impl), addr);
+    }
+
+    function testUpgradeUUPS() public {
+        testDeployUUPS();
+        TestImplementation newImpl = new TestImplementation();
+        /// Since the admin is an EOA, it doesn't have an owner
+        proxy.upgrade(address(newImpl), admin, address(0));
+        bytes32 implSlot = bytes32(
+            uint256(keccak256("eip1967.proxy.implementation")) - 1
+        );
+        bytes32 proxySlot = vm.load(proxyAddress, implSlot);
+        address addr;
+        assembly {
+            mstore(0, proxySlot)
+            addr := mload(0)
+        }
+        assertEq(address(newImpl), addr);
     }
 
     function testDeployBeacon() public {
