@@ -44,8 +44,6 @@ contract UpgradeTest is DSTest {
             mstore(0, proxySlot)
             addr := mload(0)
         }
-        emit log_bytes32(proxySlot);
-        emit log_address(addr);
         assertEq(address(impl), addr);
     }
 
@@ -57,5 +55,15 @@ contract UpgradeTest is DSTest {
         beaconTester.deploy(address(impl));
         proxy.deploy(address(beaconTester.beacon()));
         assertEq(address(impl), beaconTester.beacon().implementation());
+        bytes32 beaconSlot = bytes32(
+            uint256(keccak256("eip1967.proxy.beacon")) - 1
+        );
+        bytes32 proxySlot = vm.load(proxy.proxyAddress(), beaconSlot);
+        address addr;
+        assembly {
+            mstore(0, proxySlot)
+            addr := mload(0)
+        }
+        assertEq(addr, beaconTester.beaconAddress());
     }
 }
