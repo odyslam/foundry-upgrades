@@ -1,0 +1,21 @@
+# The Default Profile
+[default]
+# Sets the concrete solc version to use
+# This overrides the `auto_detect_solc` value
+auto_detect_solc = true
+# Increase optimizer_runs
+optimizer = true
+optimizer_runs = 1_000
+# Fuzz more than the default 256
+fuzz_runs = 1_000
+# Configure remappings
+remappings = [
+  "ds-test=lib/ds-test/src/",
+  "forge-std=lib/forge-std/src/",
+  "solmate=lib/solmate/src/",
+  "openzeppelin=lib/openzeppelin-contracts/contracts"
+]
+
+# Extreme Fuzzing CI Profile :P
+[ci]
+fuzz_runs = 100_000
