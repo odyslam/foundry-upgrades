@@ -48,4 +48,14 @@ contract UpgradeTest is DSTest {
         emit log_address(addr);
         assertEq(address(impl), addr);
     }
+
+    function testDeployBeacon() public {
+        proxy.setType("beaconProxy");
+        // I will need an extra ProxyTester to become the beacon
+        ProxyTester beaconTester = new ProxyTester();
+        beaconTester.setType("beacon");
+        beaconTester.deploy(address(impl));
+        proxy.deploy(address(beaconTester.beacon()));
+        assertEq(address(impl), beaconTester.beacon().implementation());
+    }
 }
