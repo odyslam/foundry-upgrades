@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.0;
 
-import {DeployProxy} from "./deployProxy.sol";
+import {DeployProxy} from "./DeployProxy.sol";
 import {ProxyAdminInterface} from "./IProxyAdmin.sol";
 
 contract UpgradeProxy is DeployProxy {

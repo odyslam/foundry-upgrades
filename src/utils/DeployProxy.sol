@@ -5,7 +5,7 @@ pragma solidity >=0.8.0;
 import {ERC1967Proxy} from "openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 import {TransparentUpgradeableProxy} from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {UpgradeableBeaconProxy} from "./UpgradeableBeaconProxy.sol";
-import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/Upgradeablebeacon.sol";
+import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/UpgradeableBeacon.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 contract DeployProxy {
