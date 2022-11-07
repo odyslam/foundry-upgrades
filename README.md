@@ -10,7 +10,7 @@ contracts using a simple API in Solidity.
 
 1. `git clone https://github.com/odyslam/foundry-upgrades`
 2. `cd foundry-upgrades`
-3. `forge install'
+3. `forge install`
 4. `forge build` for complile the .sol file. 
 
 
